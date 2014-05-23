@@ -32,7 +32,7 @@ then
 		echo "action valide"
 		touch ./actionsStock/$1
 	else 
-		echo $a >> ./actionsStock/$1
+			echo "$(date +%Y/%m/%d/%H/%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
 	fi
 	exit
 else
@@ -45,7 +45,7 @@ else
 		then
 			echo "action valide"
 		else 
-			echo $a >> ./actionsStock/$1 #ajout de la valeur de l'action
+			echo "$(date +%Y/%m/%d/%H/%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
 		fi
 		exit
 	fi

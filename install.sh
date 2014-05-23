@@ -1,4 +1,4 @@
 #! /bin/bash
 
-mkdir actionsStock frequencesStock
+mkdir actionsStock frequencesStock grapheStock
 touch ./actionsStock/actions.txt
