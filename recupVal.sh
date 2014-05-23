@@ -7,7 +7,7 @@ then
 	exit
 fi
 
-if [ $# -eq 2 ] && [ $2 == "testt" ] #si 
+if [ $# -eq 2 ] && [ $2 = "testt" ] #si 
 then
 	modVerif=1
 fi

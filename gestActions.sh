@@ -149,7 +149,7 @@ do
 				fi
 			done
  # verif si le fichier n'existe pas deja
- if [ -f "./memCron" ] #tmp
+ if [ ! -f "./memCron" ] #tmp
 			then
 				echo
 			else
