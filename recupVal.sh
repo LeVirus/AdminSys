@@ -32,7 +32,13 @@ then
 		echo "action valide"
 		touch ./actionsStock/$1
 	else 
-			echo "$(date +%Y/%m/%d/%H/%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
+			echo "$(date +%d/%m/%Y/%H:%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
+			#test nombre de ligne du fichier de stockage du cours de l'action modulo la frequence de generation des graphes(fichier config)
+			#si -eq 0 generation du graphe
+			if [ $(( $(wc -l fichier) % $( cat ./frequencesStock/$1 | cut -f4 -d ' ' ) )) -eq 0 ]
+			then
+				sh genGraph.sh $1
+			fi
 	fi
 	exit
 else
@@ -44,6 +50,7 @@ else
 		if [ $modVerif -eq 1 ] # si simple verification
 		then
 			echo "action valide"
+		touch ./actionsStock/$1 # creation du fichier pour validation
 		else 
 			echo "$(date +%Y/%m/%d/%H/%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
 		fi

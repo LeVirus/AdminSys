@@ -7,9 +7,14 @@ suprCron(){
 		exit
 	fi
 	cmpt=0
+	if [ ! -f ./memCron ]
+	then
+		echo "nouveau crontab"
+		$(crontab -l) > ./memCron
+	fi
 	while read lignee; do #verif si action pas deja presente
 		cmpt=$(($cmpt+1))
-		if [ $(echo "$lignee" | cut -f8 -d ' ') = $mem ]
+		if [ "$lignee" != "" ] && [ $(echo "$lignee" | cut -f8 -d ' ') = $1 ]
 		then
 			sed "$cmpt d" -i "./memCron" # supr de l'ancienne ligne de commande
 			break
@@ -17,23 +22,28 @@ suprCron(){
 	done < ./memCron # lecture texte
 }
 
-search(){ #fonction pour verifier si une action est deja presente
+verifCron(){
 	if [ $# -ne 1 ]
 	then
 		echo -1 # renvoie -1 en cas d'erreur argument
 		exit
 	fi
 	cmpt=0
-	while read ligne; do #verif si action pas deja presente
+	if [ ! -f ./memCron ]
+	then
+		echo "nouveau crontab"
+		$(crontab -l) > ./memCron
+	fi
+	while read lignee; do #verif si action pas deja presente
 		cmpt=$(($cmpt+1))
-		if [ "$ligne" = $1 ]
+		if [ "$lignee" != "" ] && [ $(echo "$lignee" | cut -f8 -d ' ') = $1 ]
 		then
-			echo $cmpt # renvoie le numero de la ligne si l'action est deja presente
+			echo 1
 			exit
-			break
 		fi
-	done < ./actionsStock/actions.txt # lecture texte
-	echo 0 # renvoie 0 si l'action n'est pas presente
+	done < ./memCron # lecture texte
+	echo 0
+	exit
 }
 
 a=1
@@ -61,18 +71,44 @@ do
 		echo "'del [nom action]' suprimmer une action"	
 		echo "'mod [nom action]' modifier frequence de recuperation"
 		echo "'val' appliquer les modifications au crontab" 
+		echo "'rmall' suprimmer toutes les actions presentes (sur crontab et dans les parametre)"
 		echo "'ls' afficher les actions ainsi que leurs frequences de recuperation de valeur"
 
 		#__________________________________________________fin h
 
 	elif [ "$recept" = "ls" ] # afficher fichier actions
 	then	
-		cat ./actionsStock/actions.txt
-
+		echo "contenu fichier"
+		ls ./actionsStock
+		echo "crontab:: $(crontab -l)"
 		#__________________________________________________fin ls
+
+	elif [ "$recept" = "rmall" ] # afficher fichier actions
+	then	
+		echo "supression de toutes les actions..."
+		if [ ! -f ./memCron ] # si memCron n'existe pas recup de crontab -l
+		then
+			crontab -l > ./memCron
+		fi
+		for i in $(ls ./actionsStock/)
+		do
+			echo "$i"
+			suprCron $i
+		done
+		crontab memCron
+		rm ./memCron
+			rm ./actionsStock/*
+			rm ./grapheStock/*
+		rm ./frequencesStock/*
+		#__________________________________________________fin rmall
 
 	elif [ "$recept" = "q" ] # quitter le programme
 	then	
+		if [ -f ./memCron ] # si fichier memCron existe les modifs n'ont pas ete validees
+		then
+			echo "mis a jour crontab"
+			crontab memCron
+		fi
 		a=0
 
 		#__________________________________________________fin q
@@ -84,10 +120,7 @@ do
 		then
 			mem=$(echo $recept | cut -d ' ' -f 2) # 2eme element= nom action
 
-			recept=$(search $mem)
-			echo "rec  $recept"
-			echo "deja:: $deja "
-			if [ $recept -ne 0 ]
+			if [ -f ./frequencesStock/$mem ]
 			then
 				echo "action deja presente"
 				echo "Annulation operation"
@@ -103,8 +136,8 @@ do
 				if [ -f ./actionsStock/$mem ] #si le fichier a ete cree l'action existe sur le site
 				then
 					echo "action existante transfert"
-					echo "$mem" >>./actionsStock/actions.txt # inserer action dans action.txt
-					echo "1/24" >> ./actionsStock/actions.txt # inserer frequence standart
+					#echo "$mem" >>./frequencesStock/actions.txt # inserer action dans action.txt
+					#echo "1/24" >> ./frequencesStock/actions.txt # inserer frequence standart
 				fi
 			fi
 			deja=0
@@ -114,20 +147,16 @@ do
 		#__________________________________________________fin add
 
 
-		#elif [ `echo $recept | cut -d ' ' -f 1` = "mod" ] # si 1er element="del"
-		#then	
 		if [ `echo $recept | cut -d ' ' -f 1` = "mod" ]
 		then
 			mem=$(echo $recept | cut -d ' ' -f 2) # recup du nom de l'action
 		fi
-		recept=$(search $mem)
-		echo "rece $recept"
-		if [ $recept -ne 0 ] # si action trouvée
+		if [ -f ./actionsStock/$mem ] # si action trouvée
 		then
 			granted=0
 			while [ $granted -eq 0 ]
 			do
-				echo "entrez frequence de rafraichissement heure (1-24) (24=1 fois par jour)"
+				echo "entrez frequence de rafraichissement heure (1-24) (24=1 fois par heure)"
 				read heure
 				if [ "$(echo $heure | grep "^[ [:digit:] ]*$")"  ] &&  [  $heure -lt 30 ] && [ $heure -gt 0 ]
 				then
@@ -148,20 +177,48 @@ do
 					echo "entrer non valide"
 				fi
 			done
- # verif si le fichier n'existe pas deja
- if [ ! -f "./memCron" ] #tmp
+
+			granted=0
+			while [ $granted -eq 0 ]
+			do
+				echo "entrez la frequence de generation de graphe (1-20)"
+				read freqG
+				if [ "$(echo $freqG | grep "^[ [:digit:] ]*$")"  ] &&  [  $freqG -le 20 ] && [ $freqG -gt 0 ] # verif si bonne fourchette
+				then
+					granted=1
+				else
+					echo "entrer non valide"
+				fi
+			done
+
+			granted=0
+			while [ $granted -eq 0 ]
+			do
+				echo "entrez le pourcentage de variation negative au bout duquel un mail sera envoyé pour signaleri(1-50)"
+				read alertMail
+				if [ "$(echo $alertMail | grep "^[ [:digit:] ]*$")"  ] &&  [  $alertMail -le 50 ] && [ $alertMail -gt 0 ] # verif si bonne fourchette
+				then
+					granted=1
+				else
+					echo "entrer non valide"
+				fi
+			done
+
+			# verif si le fichier n'existe pas deja
+			if [ -f "./memCron" ] #tmp
 			then
 				echo
 			else
 				echo "nouveau memCron"
 				echo "$(crontab -l)" > ./memCron #ecrire le contenu du crontab dans un fichier
 			fi
-			suprCron $mem
+			suprCron $mem # suprimmer l'ancienne ligne
 
 
 
 
 			echo "0 */$heure */$jour * * sh $(pwd)/recupVal.sh $mem"  >> ./memCron # ajouter la commande au fichier
+			echo "$heure $jour $alertMail $freqG" > ./frequencesStock/$mem
 		else
 			echo "action non reconnue"
 		fi
@@ -172,21 +229,20 @@ do
 	elif [ `echo $recept | cut -d ' ' -f 1` = "del" ] # si 1er element="del"
 	then	
 		mem=$(echo $recept | cut -d ' ' -f 2)
-		recept=$(search $mem)
-		echo "rece $recept"
-		if [ $recept -ne 0 ]
-		then
-			sed $recept,$(($recept+1))d -i actionsStock/actions.txt # supr des 2 lignes correspondantes a l'action
 
- if [ -f "./memCron" ] #tmp
+		if [ -f ./actionsStock/$mem ]
+		then
+
+			if [ ! -f "./memCron" ] #tmp
 			then
-				echo
-			else
 				echo "nouveau memCron"
 				echo "$(crontab -l)" > ./memCron #ecrire le contenu du crontab dans un fichier
 			fi
 
 			suprCron $mem
+			rm ./actionsStock/$mem
+			rm ./frequencesStock/$mem
+			rm ./grapheStock/$mem
 		else
 			echo "action non reconnue"
 		fi
@@ -195,19 +251,19 @@ do
 
 	elif [ `echo $recept | cut -d ' ' -f 1` = "val" ]
 	then
-		if [ -f ./memCron ]
+		if [ ! -f ./memCron ]
 		then
-			echo
-		else
 			echo "rien a mettre a jour"
 			continue
 		fi
 		crontab memCron # appliquer la commande au crontab
-rm memCron
+		rm memCron
+
+		#__________________________________________________fin val 
+
 	else 
 		echo "erreur commande"
 	fi
 done
-rm memCron
 echo "fin prog"
 exit
