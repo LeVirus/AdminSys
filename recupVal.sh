@@ -35,7 +35,10 @@ then
 			echo "$(date +%d/%m/%Y/%H:%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
 			#test nombre de ligne du fichier de stockage du cours de l'action modulo la frequence de generation des graphes(fichier config)
 			#si -eq 0 generation du graphe
-			if [ $(( $(wc -l fichier) % $( cat ./frequencesStock/$1 | cut -f4 -d ' ' ) )) -eq 0 ]
+
+			opA=$(wc -l ./actionsStock/$1 | cut -f1 -d ' ') # recup nombre de ligne du fichier de stock
+			opB=$( cat ./frequencesStock/$1 | cut -f4 -d ' ' ) # recup de la frequence de gen de graphe
+			if [ $(( $opA - $(( $(( $opA / $opB )) * $opB )) )) -eq 0 ] # calcul modulo ($opA%$opB==0)
 			then
 				sh genGraph.sh $1
 			fi
@@ -50,9 +53,17 @@ else
 		if [ $modVerif -eq 1 ] # si simple verification
 		then
 			echo "action valide"
-		touch ./actionsStock/$1 # creation du fichier pour validation
+			touch ./actionsStock/$1 # creation du fichier pour validation
 		else 
+			rec=$( cat ./frequencesStock/$1 | cut -f3 -d ' ' ) # recup de la tolérence du pourcentage de variation
+			# amodif
 			echo "$(date +%Y/%m/%d/%H/%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
+			opA=$(wc -l ./actionsStock/$1 | cut -f1 -d ' ')
+			opB=$( cat ./frequencesStock/$1 | cut -f4 -d ' ' )
+			if [ $(( $opA - $(( $(( $opA / $opB )) * $opB )) )) -eq 0 ]
+			then
+				sh genGraph.sh $1
+			fi
 		fi
 		exit
 	fi

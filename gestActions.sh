@@ -165,6 +165,20 @@ do
 					echo "entrer non valide"
 				fi
 			done
+
+			granted=0
+			while [ $granted -eq 0 ]
+			do
+				echo "entrez frequence de rafraichissement en minute (1-60)"
+				read min
+				if [ "$(echo $min | grep "^[ [:digit:] ]*$")"  ] &&  [  $min -lt 60 ] && [ $min -gt 0 ] # verif si bonne fourchette
+				then
+					granted=1
+				else
+					echo "entrer non valide"
+				fi
+			done
+
 			granted=0
 			while [ $granted -eq 0 ]
 			do
@@ -212,12 +226,12 @@ do
 				echo "nouveau memCron"
 				echo "$(crontab -l)" > ./memCron #ecrire le contenu du crontab dans un fichier
 			fi
-			suprCron $mem # suprimmer l'ancienne ligne
+			suprCron $mem # suprimmer l'ancienne ligne si besoin est
 
 
 
 
-			echo "0 */$heure */$jour * * sh $(pwd)/recupVal.sh $mem"  >> ./memCron # ajouter la commande au fichier
+			echo "*/$min */$heure */$jour * * sh $(pwd)/recupVal.sh $mem"  >> ./memCron # ajouter la commande au fichier
 			echo "$heure $jour $alertMail $freqG" > ./frequencesStock/$mem
 		else
 			echo "action non reconnue"
