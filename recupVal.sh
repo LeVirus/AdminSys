@@ -32,6 +32,10 @@ then
 		echo "action valide"
 		touch ./actionsStock/$1
 	else 
+			# verif si ecart entre derniere valeur et la nouvelle est <= n%
+			ancien=$(tail -n1 actionsStock/$1 | cut -f2 -d ' ')
+			#faire calcul avec $a
+
 			echo "$(date +%d/%m/%Y/%H:%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
 			#test nombre de ligne du fichier de stockage du cours de l'action modulo la frequence de generation des graphes(fichier config)
 			#si -eq 0 generation du graphe
@@ -40,7 +44,7 @@ then
 			opB=$( cat ./frequencesStock/$1 | cut -f4 -d ' ' ) # recup de la frequence de gen de graphe
 			if [ $(( $opA - $(( $(( $opA / $opB )) * $opB )) )) -eq 0 ] # calcul modulo ($opA%$opB==0)
 			then
-				sh genGraph.sh $1
+				sh genGraph.sh $1 # generation du graphe
 			fi
 	fi
 	exit

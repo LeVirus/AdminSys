@@ -67,6 +67,7 @@ do
 
 	if [ "$recept" = "h" ] #affiche la liste des commande possible
 	then
+		echo "'h' afficher ce menu."	
 		echo "'add [nom action]' ajouter une action"	
 		echo "'del [nom action]' suprimmer une action"	
 		echo "'mod [nom action]' modifier frequence de recuperation"
