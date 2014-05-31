@@ -219,6 +219,20 @@ do
 				fi
 			done
 
+			# verif si adresse mail est deja entrée
+			while [ ! -f ./frequencesStock/adrMail ] # fichier adrMail existe?
+			do
+				echo "entrez l'adresse a laquelle sera envoyé le mail de signalisation"
+				read adrMail # entrer variable clavier
+				# verif si variable possede un '@' et se termine par .fr ou .com
+				if [ $(echo "$adrMail" | grep @ ) ] && [ $(echo "$adrMail" | grep .fr$ ) ] || [ $(echo "$adrMail" | grep .com$ ) ]
+				then
+					echo "$adrMail" > ./frequencesStock/adrMail # entrer de la variable dans le fichier(et creation du fichier si non existant)
+				else
+					echo "entrer non valide"
+				fi
+			done
+
 			# verif si le fichier n'existe pas deja
 			if [ -f "./memCron" ] #tmp
 			then
