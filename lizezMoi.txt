@@ -1,0 +1,17 @@
+Avant de lancer "sh gestActions.sh", il faut executer install.sh.
+install.sh cree les repertoire necessaire au fonctionnement du programme.
+Certaines informations seront demandé a la premiere utilisation de gestActions.sh.
+gestActions.sh est le fichier central, il permet de modifier les parametres(crontab, adresse mail...)
+
+Le cours des actions est recupere par recupVal.sh(cron), il appelle genGraphe.sh(qui genere un graphe de l'action courrante)
+quand c'est necessaire.
+
+saveInc.sh sauvegarde les graphe: (appelé directement par cron)
+si aucune sauvegarde n'a ete faite tous les graphes presents sont sauvés.
+si une ou plusieurs sauvegardes ont deja ete faite, seul les graphes 
+qui sont plus recent que la derniere sauvegarde seront sauvés.
+
+Le programme traite chaque action independemment, ce qui implique que chaque action est modifiable.
+
+Le programme se trouve sous github::  https://github.com/LeVirus/AdminSys.git
+
