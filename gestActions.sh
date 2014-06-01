@@ -22,30 +22,6 @@ suprCron(){
 	done < ./memCron # lecture texte
 }
 
- #verifCron(){
-	#if [ $# -ne 1 ]
-	#then
-	#	echo -1 # renvoie -1 en cas d'erreur argument
-	#	exit
-	#fi
-	#cmpt=0
-	#if [ ! -f ./memCron ]
-	#then
-	#	echo "nouveau crontab"
-	#	$(crontab -l) > ./memCron
-	#fi
-	#while read lignee; do #verif si action pas deja presente
-	#	cmpt=$(($cmpt+1))
-	#	if [ "$lignee" != "" ] && [ $(echo "$lignee" | cut -f8 -d ' ') = $1 ]
-	#	then
-		#	echo 1
-			#exit
-		#fi
-	#done < ./memCron # lecture texte
-	#echo 0
-#	exit
-#}
-
 a=1
 recept=""
 q="q"
@@ -53,6 +29,13 @@ tmp=""
 ligne=""
 mem=""
 deja=0
+
+if [ ! -f ~/.config/memPath ]
+then
+echo "create fic"
+	echo "$(pwd)" > ~/.config/memPath # memo chemin pour cron
+fi
+
 while [ $a -ne 0 ] #boucle principale
 do
 	echo "entrez commande h pour aide ."
@@ -246,6 +229,22 @@ do
 				fi
 			done
 
+			#
+			while [ ! -d ./SAVE ] # fichier adrMail existe?
+			do
+				echo "Entrez la frequence (jours) de sauvegarde (incrementale) des graphes (1-30)"
+				read freqMG # entrer variable clavier
+				if [ "$(echo $freqMG | grep "^[ [:digit:] ]*$")"  ] &&  [  $freqMG -le 30 ] && [ $freqMG -gt 1 ] # verif si bonne fourchette
+				then
+				echo "$(crontab -l)" > ./memCron #ecrire le contenu du crontab dans un fichier
+			echo "0 0 */$freqMG * * sh $(pwd)/saveInc.sh $mem"  >> ./memCron # ajouter la commande au fichier
+			crontab memCron
+			mkdir SAVE
+				else
+					echo "entrer non valide"
+				fi
+			done
+
 			# verif si le fichier n'existe pas deja
 			if [ -f "./memCron" ] #tmp
 			then
@@ -284,7 +283,7 @@ do
 			suprCron $mem
 			rm ./actionsStock/$mem
 			rm ./frequencesStock/$mem
-			rm ./grapheStock/$mem
+			rm -R ./grapheStock/$mem
 		else
 			echo "action non reconnue"
 		fi

@@ -17,6 +17,8 @@ puissanceDix(){
 	exit
 }
 
+memPos=$(cat $(memPos)/frequencesStock/pwda)
+
 modVerif=0 #variable determinant si il faut verifier l'action sur le site ou recuperer l'action
 if [ $# -ne 1 ] && [ $# -ne 2 ]
 then
@@ -98,6 +100,7 @@ else # si ajout de la valeur dans la base
 			echo "$res $ancien"
 			partA=$( echo "$ancien" | cut -f1 -d '.' ) # recup 1ere partie avant la virgule
 			partB=$( echo "$ancien" | cut -f2 -d '.' ) # ""    ""      ""  apres  ""   ""
+			partB=$(echo "$partB" |sed -e 's/^0*//g') # supression des espaces en fin de chaine
 			cmptA=$(echo "$partB" | wc -c) # comptage du nombre de chiffres apres la virgule de "ancien"
 			cmptA=$(($cmptA - 1)) # correction -1 
 			recA=$(puissanceDix $cmptA) # conversion en puissance de dix avec la fonction
@@ -107,6 +110,7 @@ else # si ajout de la valeur dans la base
 			a=$(echo "$a" |sed -e 's/[[:blank:]]*$//') # supression des espaces en fin de chaine
 			partA=$( echo "$a" | cut -f1 -d '.' ) # nouvelle valeur
 			partB=$( echo "$a" | cut -f2 -d '.' )
+			partB=$(echo "$partB" |sed -e 's/^0*//g') # supression des 0 en debut de chaine
 			cmptB=$(echo "$partB" | wc -c) # comptage du nombre de chiffres apres la virgule de "ancien"
 			cmptB=$(($cmptB - 1))
 			recB=$(puissanceDix $cmptB)

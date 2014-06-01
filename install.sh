@@ -1,3 +1,3 @@
 #! /bin/bash
 
-mkdir actionsStock frequencesStock grapheStock SAVE
+mkdir actionsStock frequencesStock grapheStock
