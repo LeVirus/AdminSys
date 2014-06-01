@@ -1,12 +1,12 @@
 #! /bin/bash
 
 puissanceDix(){
-if [ $# -ne 1 ] || [ $1 -le 0 ]
-then
-	echo "erreur puissance arguments non valide"
-	exit
-fi
-cmpt=0
+	if [ $# -ne 1 ] || [ $1 -le 0 ]
+	then
+		echo "erreur puissance arguments non valide"
+		exit
+	fi
+	cmpt=0
 	var=1
 	while [ $cmpt -ne $1 ]
 	do
@@ -74,67 +74,80 @@ then
 else # si ajout de la valeur dans la base
 
 
-#Verification ecart negatif______________________________________
+	#Verification ecart negatif______________________________________
 
-if [ $(wc -l ./actionsStock/$1 | cut -f1 -d ' ') -ne 0 ] # verif si fichier non vide
-then
-
-	# verif si ecart entre derniere valeur et la nouvelle est <= n%
-	limitPourcent=$( head ./frequencesStock/$1 | cut -f3 -d ' ' ) #recup limite pourcentage dans frequencesStock
-	ancien=$(tail -n1 actionsStock/$1 | cut -f2 -d ' ') # recup derniere valeur enregistrée
-
-	partA=$( echo "$ancien" | cut -f1 -d '.' ) # recup 1ere partie avant la virgule
-	partB=$( echo "$ancien" | cut -f2 -d '.' ) # ""    ""      ""  apres  ""   ""
-	cmptA=$(echo "$partB" | wc -c) # comptage du nombre de chiffres apres la virgule de "ancien"
-	cmptA=$(($cmptA - 1)) # correction -1 
-	recA=$(puissanceDix $cmptA) # conversion en puissance de dix avec la fonction
-	partA=$(($partA * $recA)) # multiplication avec recA
-	ancien=$(($partA + $partB)) # adition des 2 parties
-	echo "$partA $partB $cmptA $recA $ancien"
-
-	partA=$( echo "$a" | cut -f1 -d '.' )
-	partB=$( echo "$a" | cut -f2 -d '.' )
-	cmptB=$(echo "$partB" | wc -c) # comptage du nombre de chiffres apres la virgule de "ancien"
-	cmptB=$(($cmptB - 1))
-	recB=$(puissanceDix $cmptB)
-	partA=$(($partA * recB))
-	memA=$(($partA + $partB))
-
-	if [ $cmptA -lt $cmptB ]
+	if [ $(wc -l ./actionsStock/$1 | cut -f1 -d ' ') -ne 0 ] # verif si fichier non vide
 	then
-		cmptA=$(($cmptB - $cmptA))
-		recA=$(puissanceDix $cmptA)
-		ancien=$(($ancien * $recA))
-	elif [ $cmptB -lt $cmptA ]
-	then
-		cmptB=$(($cmptA - $cmptB))
-		recB=$(puissanceDix $cmptB)
-		memA=$(($memA * $recB))
+
+		# verif si ecart entre derniere valeur et la nouvelle est <= n%
+		limitPourcent=$( head ./frequencesStock/$1 | cut -f3 -d ' ' ) #recup limite pourcentage dans frequencesStock
+
+		#recup derniere valeur generer dans un graphe
+		genG=$( head ./frequencesStock/$1 | cut -f4 -d ' ' ) #recup frequence creat graphe
+		nbL=$(cat ./actionsStock/$1 | wc -l) #recup nbr ligne action
+
+		# verif du depassement du seuil uniquement si le nombre de valeur stocké est > a la frequence de 
+		# generation de graphe
+		if [ $genG -le $nbL ] 
+		then
+			res=$(( $(( $(( $nbL / $genG )) * $genG )) ))  # calcul derniere val dans un graphe
+
+			echo "$genG $nbL $res"
+
+			ancien=$(cat actionsStock/$1 | head -n$res | tail -n1 | cut -f2 -d ' ') # recup derniere valeur enregistrée
+			echo "$res $ancien"
+			partA=$( echo "$ancien" | cut -f1 -d '.' ) # recup 1ere partie avant la virgule
+			partB=$( echo "$ancien" | cut -f2 -d '.' ) # ""    ""      ""  apres  ""   ""
+			cmptA=$(echo "$partB" | wc -c) # comptage du nombre de chiffres apres la virgule de "ancien"
+			cmptA=$(($cmptA - 1)) # correction -1 
+			recA=$(puissanceDix $cmptA) # conversion en puissance de dix avec la fonction
+			partA=$(($partA * $recA)) # multiplication avec recA
+			ancien=$(($partA + $partB)) # adition des 2 parties
+
+			a=$(echo "$a" |sed -e 's/[[:blank:]]*$//') # supression des espaces en fin de chaine
+			partA=$( echo "$a" | cut -f1 -d '.' ) # nouvelle valeur
+			partB=$( echo "$a" | cut -f2 -d '.' )
+			cmptB=$(echo "$partB" | wc -c) # comptage du nombre de chiffres apres la virgule de "ancien"
+			cmptB=$(($cmptB - 1))
+			recB=$(puissanceDix $cmptB)
+			partA=$(($partA * recB))
+			memA=$(($partA + $partB))
+
+			if [ $cmptA -lt $cmptB ]
+			then
+				cmptA=$(($cmptB - $cmptA))
+				recA=$(puissanceDix $cmptA)
+				ancien=$(($ancien * $recA))
+			elif [ $cmptB -lt $cmptA ]
+			then
+				cmptB=$(($cmptA - $cmptB))
+				recB=$(puissanceDix $cmptB)
+				memA=$(($memA * $recB))
+			fi
+
+			diff=$(($ancien - $memA)) 
+			echo "diff $diff $ancien $memA"
+			pourcent=$((100 * $diff / $ancien)) # calcul de la différence en %
+			echo "pourcent $pourcent"
+			if [ $diff -gt 0 ] # verif si la difference est positive
+			then
+				pourcent=$((100 * $diff / $ancien)) # calcul de la différence en %
+			fi
+			# si pourcentage limite depasse
+			if [ $pourcent -ge $limitPourcent ]
+			then
+				adrM=$(cat ./frequencesStock/adrMail)
+				echo "limite depassee envoie d'un mail"
+				# envoi du mail a l'adresse stockee dans le fichier
+				echo "l'action $1 a diminué de $pourcent % \n.Date:$(date +%d/%m/%Y/%H:%M)" | mail -s "Depassement action $1" $adrM 
+			fi
+
+		fi
 	fi
-
-	diff=$(($ancien - $memA)) 
-	echo "diff $diff $ancien $memA"
-		pourcent=$((100 * $diff / $ancien)) # calcul de la différence en %
-	echo "pourcent $pourcent"
-	if [ $diff -gt 0 ] # verif si la difference est positive
-	then
-		pourcent=$((100 * $diff / $ancien)) # calcul de la différence en %
-	fi
-	# si pourcentage limite depasse
-	if [ $pourcent -ge $limitPourcent ]
-	then
-		adrM=$(cat ./frequencesStock/adrMail)
-		echo "limite depassee envoie d'un mail"
-		# envoi du mail a l'adresse stockee dans le fichier
-		echo "l'action $1 a diminué de $pourcent % \n.Date:$(date +%d/%m/%Y/%H:%M)" | mail -s "Depassement action $1" $adrM 
-	fi
-
-fi
-
 	echo "$(date +%d/%m/%Y/%H:%M) $a" >> ./actionsStock/$1 #ajout de la date a laquelle l'action a ete pushee
 
 
-#Generation du Graphe______________________________________
+	#Generation du Graphe______________________________________
 
 
 	#test nombre de ligne du fichier de stockage du cours de l'action modulo la frequence de generation des graphes(fichier config)
@@ -144,5 +157,6 @@ fi
 	if [ $(( $opA - $(( $(( $opA / $opB )) * $opB )) )) -eq 0 ] # calcul modulo ($opA%$opB==0)
 	then
 		sh genGraph.sh $1 # generation du graphe
+		rm ./tmp # supr du fichier temporaire cree par genGraph.sh
 	fi
 fi

@@ -22,29 +22,29 @@ suprCron(){
 	done < ./memCron # lecture texte
 }
 
-verifCron(){
-	if [ $# -ne 1 ]
-	then
-		echo -1 # renvoie -1 en cas d'erreur argument
-		exit
-	fi
-	cmpt=0
-	if [ ! -f ./memCron ]
-	then
-		echo "nouveau crontab"
-		$(crontab -l) > ./memCron
-	fi
-	while read lignee; do #verif si action pas deja presente
-		cmpt=$(($cmpt+1))
-		if [ "$lignee" != "" ] && [ $(echo "$lignee" | cut -f8 -d ' ') = $1 ]
-		then
-			echo 1
-			exit
-		fi
-	done < ./memCron # lecture texte
-	echo 0
-	exit
-}
+ #verifCron(){
+	#if [ $# -ne 1 ]
+	#then
+	#	echo -1 # renvoie -1 en cas d'erreur argument
+	#	exit
+	#fi
+	#cmpt=0
+	#if [ ! -f ./memCron ]
+	#then
+	#	echo "nouveau crontab"
+	#	$(crontab -l) > ./memCron
+	#fi
+	#while read lignee; do #verif si action pas deja presente
+	#	cmpt=$(($cmpt+1))
+	#	if [ "$lignee" != "" ] && [ $(echo "$lignee" | cut -f8 -d ' ') = $1 ]
+	#	then
+		#	echo 1
+			#exit
+		#fi
+	#done < ./memCron # lecture texte
+	#echo 0
+#	exit
+#}
 
 a=1
 recept=""
@@ -99,7 +99,7 @@ do
 		crontab memCron
 		rm ./memCron
 			rm ./actionsStock/*
-			rm ./grapheStock/*
+			rm -R ./grapheStock/*
 		rm ./frequencesStock/*
 		#__________________________________________________fin rmall
 
@@ -219,6 +219,19 @@ do
 				fi
 			done
 
+			granted=0
+			while [ $granted -eq 0 ]
+			do
+				echo "Entrez le nombre de graphe a concerver (2-10)"
+				read nbrGraph
+				if [ "$(echo $nbrGraph | grep "^[ [:digit:] ]*$")"  ] &&  [  $nbrGraph -le 10 ] && [ $nbrGraph -gt 1 ] # verif si bonne fourchette
+				then
+					granted=1
+				else
+					echo "entrer non valide"
+				fi
+			done
+
 			# verif si adresse mail est deja entrée
 			while [ ! -f ./frequencesStock/adrMail ] # fichier adrMail existe?
 			do
@@ -247,7 +260,7 @@ do
 
 
 			echo "*/$min */$heure */$jour * * sh $(pwd)/recupVal.sh $mem"  >> ./memCron # ajouter la commande au fichier
-			echo "$heure $jour $alertMail $freqG" > ./frequencesStock/$mem
+			echo "$heure $jour $alertMail $freqG $nbrGraph" > ./frequencesStock/$mem
 		else
 			echo "action non reconnue"
 		fi
